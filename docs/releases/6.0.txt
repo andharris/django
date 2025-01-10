@@ -64,6 +64,8 @@ Minor features
 
 :mod:`django.contrib.gis`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
+* GEOS geometries can check for the M dimension via the new :attr:`.GEOSGeometry.hasm`
+  property with GEOS version 3.12 or higher.
 
 * ...
 

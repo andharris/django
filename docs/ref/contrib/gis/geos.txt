@@ -312,7 +312,13 @@ Properties
 
 .. attribute:: GEOSGeometry.hasz
 
-    Returns a boolean indicating whether the geometry is three-dimensional.
+    Returns a boolean indicating whether the geometry has the Z dimension.
+
+.. attribute:: GEOSGeometry.hasm
+
+    .. versionadded:: 6.0
+
+    Returns a boolean indicating whether the geometry has the M dimension.
 
 .. attribute:: GEOSGeometry.ring
 
