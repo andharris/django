@@ -26,7 +26,7 @@ from django.db.models.deletion import Collector
 from django.db.models.expressions import Case, F, Value, When
 from django.db.models.functions import Cast, Trunc
 from django.db.models.query_utils import FilteredRelation, Q
-from django.db.models.sql.constants import CURSOR, GET_ITERATOR_CHUNK_SIZE
+from django.db.models.sql.constants import GET_ITERATOR_CHUNK_SIZE, ROW_COUNT
 from django.db.models.utils import (
     AltersData,
     create_namedtuple_class,
@@ -728,7 +728,7 @@ class QuerySet(AltersData):
                     "bulk_create() can only be used with concrete fields in "
                     "update_fields."
                 )
-            if any(f.primary_key for f in update_fields):
+            if any(f in self.model._meta.pk_fields for f in update_fields):
                 raise ValueError(
                     "bulk_create() cannot be used with primary keys in "
                     "update_fields."
@@ -1209,11 +1209,7 @@ class QuerySet(AltersData):
         """
         query = self.query.clone()
         query.__class__ = sql.DeleteQuery
-        cursor = query.get_compiler(using).execute_sql(CURSOR)
-        if cursor:
-            with cursor:
-                return cursor.rowcount
-        return 0
+        return query.get_compiler(using).execute_sql(ROW_COUNT)
 
     _raw_delete.alters_data = True
 
@@ -1252,7 +1248,7 @@ class QuerySet(AltersData):
         # Clear any annotations so that they won't be present in subqueries.
         query.annotations = {}
         with transaction.mark_for_rollback_on_error(using=self.db):
-            rows = query.get_compiler(self.db).execute_sql(CURSOR)
+            rows = query.get_compiler(self.db).execute_sql(ROW_COUNT)
         self._result_cache = None
         return rows
 
@@ -1277,7 +1273,7 @@ class QuerySet(AltersData):
         # Clear any annotations so that they won't be present in subqueries.
         query.annotations = {}
         self._result_cache = None
-        return query.get_compiler(self.db).execute_sql(CURSOR)
+        return query.get_compiler(self.db).execute_sql(ROW_COUNT)
 
     _update.alters_data = True
     _update.queryset_only = False
@@ -1746,7 +1742,7 @@ class QuerySet(AltersData):
         Defer the loading of data for certain fields until they are accessed.
         Add the set of deferred fields to any existing set of deferred fields.
         The only exception to this is if None is passed in as the only
-        parameter, in which case removal all deferrals.
+        parameter, in which case remove all deferrals.
         """
         self._not_support_combined_queries("defer")
         if self._fields is not None:
